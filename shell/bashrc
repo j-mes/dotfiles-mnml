@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Look for .bash_profile if on Linux
+[ -n "$PS1" ] && source ~/.bash_profile;
