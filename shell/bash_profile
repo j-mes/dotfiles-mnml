@@ -1,0 +1,133 @@
+#!/bin/bash
+
+# Load the shell dotfiles, and then some:
+# * ~/.extra can be used for other settings you don’t want to commit.
+for file in ~/.{exports,inputrc,aliases,functions,extra}; do
+	[ -r "$file" ] && [ -f "$file" ] && source "$file";
+done;
+unset file;
+
+# Case-insensitive globbing (used in pathname expansion)
+shopt -s nocaseglob;
+
+# Append to the Bash history file, rather than overwriting it
+shopt -s histappend;
+
+# Autocorrect typos in path names when using `cd`
+shopt -s cdspell;
+
+# Enable some Bash 4 features when possible:
+# * `autocd`, e.g. `**/qux` will enter `./foo/bar/baz/qux`
+# * Recursive globbing, e.g. `echo **/*.txt`
+for option in autocd globstar; do
+	shopt -s "$option" 2> /dev/null;
+done;
+
+# Initialise bash completion
+if [ ! `which brew` == "" ]; then
+
+	# Only use `brew` after it has been added to the PATH
+	bash_completion_path="$(brew --prefix)/etc/bash_completion"
+
+	# Source Bash completion (installed via Homebrew)
+	if [[ -r $bash_completion_path ]]; then
+		source $bash_completion_path
+	fi
+
+fi
+
+# Add tab completion for many Bash commands
+if which brew &> /dev/null && [ -f "$(brew --prefix)/share/bash-completion/bash_completion" ]; then
+	source "$(brew --prefix)/share/bash-completion/bash_completion";
+elif [ -f /etc/bash_completion ]; then
+	source /etc/bash_completion;
+fi;
+
+# Enable tab completion for `g` by marking it as an alias for `git`
+if type _git &> /dev/null && [ -f /usr/local/etc/bash_completion.d/git-completion.bash ]; then
+	complete -o default -o nospace -F _git g;
+fi;
+
+export PS1="\[\e[33m\]\A\[\e[m\] \[\e[36m\]\u\[\e[m\]@\[\e[36m\]\h\[\e[m\] \w \[\e[35m\]\`parse_git_branch\`\[\e[m\] "
+
+# Load .extra
+source $HOME/.extra
+
+# Run 'nvm use' automatically every time there's 
+# a .nvmrc file in the directory. Also, revert to default 
+# version when entering a directory without .nvmrc
+#
+enter_directory() {
+	if [[ $PWD == $PREV_PWD ]]; then
+		return
+	fi
+
+	PREV_PWD=$PWD
+	if [[ -f ".nvmrc" ]]; then
+		nvm use
+		NVM_DIRTY=true
+	elif [[ $NVM_DIRTY = true ]]; then
+		nvm use default
+		NVM_DIRTY=false
+	fi
+}
+
+export PROMPT_COMMAND=enter_directory
+
+# npm command completion script
+# Installation: npm completion >> ~/.bashrc  (or ~/.zshrc)
+# Or, maybe: npm completion > /usr/local/etc/bash_completion.d/npm
+if type complete &>/dev/null; then
+	_npm_completion () {
+		local words cword
+		if type _get_comp_words_by_ref &>/dev/null; then
+			_get_comp_words_by_ref -n = -n @ -n : -w words -i cword
+		else
+			cword="$COMP_CWORD"
+			words=("${COMP_WORDS[@]}")
+		fi
+
+		local si="$IFS"
+		IFS=$'\n' COMPREPLY=($(COMP_CWORD="$cword" \
+			COMP_LINE="$COMP_LINE" \
+			COMP_POINT="$COMP_POINT" \
+			npm completion -- "${words[@]}" \
+			2>/dev/null)) || return $?
+		IFS="$si"
+		if type __ltrim_colon_completions &>/dev/null; then
+			__ltrim_colon_completions "${words[cword]}"
+		fi
+	}
+	complete -o default -F _npm_completion npm
+
+elif type compdef &>/dev/null; then
+	_npm_completion() {
+		local si=$IFS
+		compadd -- $(COMP_CWORD=$((CURRENT-1)) \
+			COMP_LINE=$BUFFER \
+			COMP_POINT=0 \
+			npm completion -- "${words[@]}" \
+			2>/dev/null)
+		IFS=$si
+	}
+	compdef _npm_completion npm
+
+elif type compctl &>/dev/null; then
+	_npm_completion () {
+		local cword line point words si
+		read -Ac words
+		read -cn cword
+		let cword-=1
+		read -l line
+		read -ln point
+		si="$IFS"
+		IFS=$'\n' reply=($(COMP_CWORD="$cword" \
+			COMP_LINE="$line" \
+			COMP_POINT="$point" \
+			npm completion -- "${words[@]}" \
+			2>/dev/null)) || return $?
+		IFS="$si"
+	}
+	compctl -K _npm_completion npm
+fi
+###-end-npm-completion-###
