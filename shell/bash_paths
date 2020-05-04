@@ -1,0 +1,12 @@
+# Add Homebrew path
+export PATH="/usr/local/sbin:$PATH"
+
+# Add node_modules to path
+export PATH="node_modules/.bin:$PATH"
+
+# Add yarn to path
+export PATH="$PATH:/opt/yarn-[version]/bin"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
