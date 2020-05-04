@@ -1,7 +1,9 @@
 # dotfiles-mnml
 A minimal dotfiles setup primarily orientated for a JavaScript/Node.js developer/engineer. Use at your own risk!
 
-```source install.sh```
+```
+source install.sh
+```
 
 This will guide you through the installation/setup process in the terminal. I usually have the dotfiles living in a folder called `Projects` on the root directory. If the installation is to be elsewhere on the machine, then please do edit the `install.sh` file to reflect on where it should live.
 
