@@ -48,8 +48,6 @@ if type _git &> /dev/null && [ -f /usr/local/etc/bash_completion.d/git-completio
 	complete -o default -o nospace -F _git g;
 fi;
 
-export PS1="\[\e[33m\]\A\[\e[m\] \[\e[36m\]\u\[\e[m\]@\[\e[36m\]\h\[\e[m\] \w \[\e[35m\]\`parse_git_branch\`\[\e[m\] "
-
 # Load .extra
 source $HOME/.extra
 
